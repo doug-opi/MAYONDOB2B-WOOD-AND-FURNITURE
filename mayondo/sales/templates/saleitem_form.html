@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Add Item to Sale #{{ view.kwargs.pk }}</h2>
+    <form method="post" class="card p-4 shadow-sm" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+            {{ form.product.label_tag }}
+            {{ form.product }}
+            {{ form.product.errors }}
+        </div>
+        <div class="mb-3">
+            {{ form.quantity.label_tag }}
+            {{ form.quantity }}
+            {{ form.quantity.errors }}
+        </div>
+        <div class="mb-3">
+            {{ form.unit_price.label_tag }}
+            {{ form.unit_price }}
+            {{ form.unit_price.errors }}
+        </div>
+        <button type="submit" class="btn btn-success">Add Item</button>
+    </form>
+</div>
+{% endblock %}

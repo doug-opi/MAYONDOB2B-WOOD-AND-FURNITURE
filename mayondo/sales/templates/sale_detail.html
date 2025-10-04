@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Sale #{{ sale.id }} - {{ sale.customer_name }}</h2>
+    <p><strong>Payment:</strong> {{ sale.get_payment_type_display }}</p>
+    <p><strong>Transport:</strong> {{ sale.transport_required|yesno:"Yes,No" }}</p>
+    <p><strong>Agent:</strong> {{ sale.sales_agent }}</p>
+    <p><strong>Date:</strong> {{ sale.created_at|date:"Y-m-d H:i" }}</p>
+
+    <h4 class="mt-4">Items</h4>
+    <a href="{% url 'sales:add_item' sale.id %}" class="btn btn-success mb-2">➕ Add Item</a>
+
+    {% if sale.items.all %}
+        <table class="table table-hover table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sale.items.all %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>${{ item.unit_price }}</td>
+                    <td>${{ item.total_price}}</td>
+                    <td>
+                        <a href="{% url 'sales:item_edit' item.id %}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="{% url 'sales:item_delete' item.id %}" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <h5 class="text-end">Grand Total: <strong>${{ sale.total_amount }}</strong></h5>
+    {% else %}
+        <p>No items added yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
