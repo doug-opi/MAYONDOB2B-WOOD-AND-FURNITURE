@@ -72,6 +72,12 @@ class SaleDeleteView(DeleteView):
 
 
 
+from .utils import generate_invoice_pdf
+
+class SaleInvoicePDFView(View):
+    def get(self, request, pk):
+        sale = get_object_or_404(Sale, pk=pk)
+        return generate_invoice_pdf(sale.id)
 
 
 

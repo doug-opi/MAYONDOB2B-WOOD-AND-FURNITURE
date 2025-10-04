@@ -31,6 +31,10 @@
                     <td>
                         <a href="{% url 'sales:item_edit' item.id %}" class="btn btn-sm btn-warning">Edit</a>
                         <a href="{% url 'sales:item_delete' item.id %}" class="btn btn-sm btn-danger">Delete</a>
+                        <a href="{% url 'sales:sale_invoice' sale.id %}" class="btn btn-success" target="_blank">
+    Download Invoice (PDF)
+</a>
+
                     </td>
                 </tr>
                 {% endfor %}
