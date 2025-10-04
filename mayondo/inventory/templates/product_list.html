@@ -22,8 +22,10 @@
             <td>{{ product.type }}</td>
             <td>{{ product.description }}</td>
             <td>
-                <a href="{% url 'product_update' product.pk %}" class="btn btn-sm btn-warning">Edit</a>
-                <a href="{% url 'product_delete' product.pk %}" class="btn btn-sm btn-danger">Delete</a>
+             
+            <td>
+              <a href="{% url 'product_update' product.pk %}" class="btn btn-sm btn-warning">Edit</a>  
+              <a href="{% url 'product_delete' product.pk %}" class="btn btn-sm btn-danger">Delete</a> 
             </td>
         </tr>
         {% empty %}

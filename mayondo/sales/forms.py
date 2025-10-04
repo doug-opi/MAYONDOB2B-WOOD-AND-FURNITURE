@@ -66,6 +66,15 @@ class SaleItemForm(forms.ModelForm):
                 f"Not enough stock available for {product.name}. "
                 f"Available: {stock.quantity}, Requested: {quantity}"
                 )
+        #if product:
+         #   if product.status != product.STATUS_AVAILABLE:
+         #       raise forms.ValidationError(
+         #           f"Product '{product.name}' is not available for sale (status={product.status})."
+         #       )
+         #   stock = Stock.objects.filter(product=product).first()
+         #   if stock and qty and stock.quantity < qty:
+         #       raise forms.ValidationError(
+         #           f"Insufficient stock for {product.name}. Available: {stock.quantity}, Requested: {qty}")
         return cleaned_data
     
 SaleItemFormSet = inlineformset_factory(

@@ -34,6 +34,7 @@ class SaleCreateView(CreateView):
       #  response = super().form_valid(form)
        # return redirect("sales:add_item", pk=self.object.pk)
     def form_valid(self, form):
+        
         if self.request.user.is_authenticated:
             form.instance.sales_agent = self.request.user
         else:

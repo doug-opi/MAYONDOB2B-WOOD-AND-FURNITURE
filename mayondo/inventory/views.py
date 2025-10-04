@@ -5,6 +5,7 @@ from .models import Product, Stock
 from .forms import ProductForm, StockForm
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 
 
 
@@ -75,3 +76,15 @@ class StockDeleteView(DeleteView):
         messages.success(self.request, "Stock was deleted successfully.")
         return super().delete(request, *args, **kwargs)
     
+
+
+#from django.utils.decorators import method_decorator
+#@method_decorator(require_POST, name='dispatch')
+#class ToggleProductStatusView(View):
+#    def post(self, request, pk):
+#        product = get_object_or_404(Product, pk=pk)
+#        product.is_available = not product.is_available
+#        product.save()
+#        return redirect('inventory:product_list')
+
+

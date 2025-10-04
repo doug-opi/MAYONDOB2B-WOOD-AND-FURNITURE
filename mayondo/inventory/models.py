@@ -18,29 +18,29 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     # NEW: soft status
-    STATUS_AVAILABLE = 'AVAILABLE'
-    STATUS_UNAVAILABLE = 'UNAVAILABLE'
-    STATUS_DISCONTINUED = 'DISCONTINUED'
-    STATUS_ARCHIVED = 'ARCHIVED'
+    #STATUS_AVAILABLE = 'AVAILABLE'
+    #STATUS_UNAVAILABLE = 'UNAVAILABLE'
+    #STATUS_DISCONTINUED = 'DISCONTINUED'
+    #STATUS_ARCHIVED = 'ARCHIVED'
 
-    STATUS_CHOICES = [
-        (STATUS_AVAILABLE, 'Available'),
-        (STATUS_UNAVAILABLE, 'Unavailable'),
-        (STATUS_DISCONTINUED, 'Discontinued'),
-        (STATUS_ARCHIVED, 'Archived'),
-    ]
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default=STATUS_AVAILABLE,
-        help_text="Product lifecycle status (soft delete / archival)."
-    )
+    #STATUS_CHOICES = [
+    #    (STATUS_AVAILABLE, 'Available'),
+    #    (STATUS_UNAVAILABLE, 'Unavailable'),
+    #    (STATUS_DISCONTINUED, 'Discontinued'),
+    #    (STATUS_ARCHIVED, 'Archived'),
+    #]
+    #status = models.CharField(
+    #    max_length=20,
+    #    choices=STATUS_CHOICES,
+    #    default=STATUS_AVAILABLE,
+    #    help_text="Product lifecycle status (soft delete / archival)."
+    #)
 
-    def is_active(self):
-        return self.status == self.STATUS_AVAILABLE
+   # def is_active(self):
+    #    return self.status == self.STATUS_AVAILABLE
 
-    def __str__(self):
-        return self.name
+   # def __str__(self):
+#        return self.name
 
     def __str__(self):
         return f"{self.name} ({self.type})"

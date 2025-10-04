@@ -7,6 +7,7 @@ from .views import (
 urlpatterns = [
     # Product URLs
     path("products/", ProductListView.as_view(), name="product_list"),
+    #path('product/<int:pk>/toggle/', ToggleProductStatusView.as_view(), name='toggle_product_status'),
     path("products/add/", ProductCreateView.as_view(), name="product_create"),
     path("products/<int:pk>/edit/", ProductUpdateView.as_view(), name="product_update"),
     path("products/<int:pk>/delete/", ProductDeleteView.as_view(), name="product_delete"),
