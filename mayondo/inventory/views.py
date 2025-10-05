@@ -118,6 +118,108 @@ class StockLevelReportView(ListView):
         context['out_of_stock_count'] = sum(1 for p in products if (p.quantity or 0) == 0)
         context['available_count'] = sum(1 for p in products if (p.quantity or 0) > 5)
         return context
+
+from django.http import HttpResponse
+from django.views import View
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import inch
+from django.db.models import Sum, F, DecimalField, ExpressionWrapper, OuterRef, Subquery
+from .models import Product, Stock
+
+
+class StockReportPDFView(View):
+    def get(self, request, *args, **kwargs):
+        # === Create HTTP response ===
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="stock_report.pdf"'
+
+        p = canvas.Canvas(response, pagesize=A4)
+        width, height = A4
+
+        # === Title and header ===
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(180, height - 50, "XYZ WOOD & FURNITURE LTD")
+        p.setFont("Helvetica", 12)
+        p.drawString(50, height - 80, "Stock Level Report")
+        p.drawString(50, height - 100, "Generated Report of Current Stock Levels")
+
+        # === Fetch data ===
+        stock_subquery = Stock.objects.filter(product=OuterRef("pk")).values("product")
+        products = Product.objects.annotate(
+            total_quantity=Subquery(
+                stock_subquery.annotate(qty=Sum("quantity")).values("qty")[:1]
+            ),
+            unit_price=Subquery(
+                stock_subquery.annotate(price=Sum("selling_price")).values("price")[:1]
+            ),
+        ).annotate(
+            stock_value=ExpressionWrapper(
+                F("total_quantity") * F("unit_price"),
+                output_field=DecimalField()
+            )
+        ).order_by("name")
+
+        # === Table header ===
+        y = height - 140
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(50, y, "Product")
+        p.drawString(250, y, "Quantity")
+        p.drawString(350, y, "Unit Price (UGX)")
+        p.drawString(480, y, "Stock Value (UGX)")
+
+        y -= 20
+        p.line(50, y, 550, y)
+        y -= 15
+
+        # === Table content ===
+        p.setFont("Helvetica", 10)
+        total_value = 0
+
+        for product in products:
+            if y < 80:  # start new page
+                p.showPage()
+                y = height - 80
+                p.setFont("Helvetica-Bold", 11)
+                p.drawString(50, y, "Product")
+                p.drawString(250, y, "Quantity")
+                p.drawString(350, y, "Unit Price (UGX)")
+                p.drawString(480, y, "Stock Value (UGX)")
+                y -= 20
+                p.line(50, y, 550, y)
+                y -= 15
+                p.setFont("Helvetica", 10)
+
+            quantity = product.total_quantity or 0
+            price = product.unit_price or 0
+            stock_value = (quantity * price)
+            total_value += stock_value
+
+            p.drawString(50, y, product.name[:25])
+            p.drawString(260, y, str(quantity))
+            p.drawRightString(420, y, f"{price:,.0f}")
+            p.drawRightString(550, y, f"{stock_value:,.0f}")
+            y -= 18
+
+        # === Footer summary ===
+        y -= 15
+        p.line(50, y, 550, y)
+        p.setFont("Helvetica-Bold", 11)
+        y -= 20
+        p.drawString(400, y, "Total Stock Value:")
+        p.drawRightString(550, y, f"{total_value:,.0f} UGX")
+
+        # === Footer note ===
+        y -= 40
+        p.setFont("Helvetica-Oblique", 9)
+        p.drawString(50, y, "Note: Goods once sold are not returnable.")
+        p.drawString(50, y - 15, "For inquiries or complaints, contact us at +256 700 000000 or info@xyzfurniture.com")
+
+        # === Save PDF ===
+        p.showPage()
+        p.save()
+        return response
+
 #class StockLevelReportView(ListView):
 #    model = Product
 #    template_name = 'stock_level_report.html'
