@@ -16,4 +16,6 @@ urlpatterns = [
     path("item/<int:pk>/edit/", views.SaleItemUpdateView.as_view(), name="item_edit"),
     path("sale/<int:pk>/invoice/", views.SaleInvoicePDFView.as_view(), name="sale_invoice"),
     path("item/<int:pk>/delete/", views.SaleItemDeleteView.as_view(), name="item_delete"),
+    path('sales-report/', views.SalesReportView.as_view(), name='sales_report'),
+    path('download-sales-report/', views.DownloadSalesReportPDFView.as_view(), name='download_sales_report_pdf'),
 ]

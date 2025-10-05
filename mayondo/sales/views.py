@@ -79,15 +79,176 @@ class SaleInvoicePDFView(View):
         sale = get_object_or_404(Sale, pk=pk)
         return generate_invoice_pdf(sale.id)
 
+from django.views.generic import ListView
+from django.db.models import Sum, Count
+from django.utils import timezone
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from .models import Sale, SaleItem
+from datetime import timedelta
+
+from django.db.models import (
+    Sum, F, DecimalField, ExpressionWrapper, OuterRef, Subquery
+)
+
+#class SalesReportView(ListView):
+#    model = Sale
+#    template_name = 'sales_report.html'
+#    context_object_name = 'sales'
+
+#    def get_queryset(self):
+#        # Default: last 30 days
+#        start_date = self.request.GET.get('start_date')
+#        end_date = self.request.GET.get('end_date')
+
+#        if start_date and end_date:
+#            queryset = Sale.objects.filter(created_at__range=[start_date, end_date])
+#        else:
+#            today = timezone.now().date()
+#            queryset = Sale.objects.filter(created_at__gte=today - timedelta(days=30))
+
+#        return queryset.order_by('-created_at')
+
+#    def get_context_data(self, **kwargs):
+#        context = super().get_context_data(**kwargs)
+#        sales = context['sales']
+
+        # Aggregations
+#        context['total_sales'] = sales.aggregate(total=Sum('total_amount'))['total'] or 0
+#        context['sale_count'] = sales.count()
+#        context['sales_by_payment'] = (
+#            sales.values('payment_type')
+#            .annotate(total=Sum('total_amount'))
+#            .order_by('-total')
+#        )
+#        return context
+
+class SalesReportView(ListView):
+    model = Sale
+    template_name = 'sales_report.html'
+    context_object_name = 'sales'
+
+    def get_queryset(self):
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+
+        queryset = Sale.objects.all()
+        if start_date and end_date:
+            queryset = queryset.filter(created_at__range=[start_date, end_date])
+        else:
+            from django.utils import timezone
+            from datetime import timedelta
+            today = timezone.now().date()
+            queryset = queryset.filter(created_at__gte=today - timedelta(days=30))
+
+        # Annotate total per sale
+        total_subquery = (
+            SaleItem.objects.filter(sale=OuterRef('pk'))
+            .values('sale')
+            .annotate(total=Sum(ExpressionWrapper(F('quantity') * F('unit_price'), output_field=DecimalField())))
+            .values('total')[:1]
+        )
+
+        queryset = queryset.annotate(total_amount=Subquery(total_subquery))
+        return queryset.order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        sales = context['sales']
+
+        context['total_sales'] = sum(s.total_amount or 0 for s in sales)
+        context['sale_count'] = sales.count()
+        context['sales_by_payment'] = (
+            sales.values('payment_type')
+            .annotate(total=Sum('total_amount'))
+            .order_by('-total')
+        )
+        return context
 
 
 
+class DownloadSalesReportPDFView(View):
+    def get(self, request, *args, **kwargs):
+        # Create HTTP response with PDF headers
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="sales_report.pdf"'
+
+        # Initialize PDF
+        p = canvas.Canvas(response, pagesize=A4)
+        width, height = A4
+
+        # Header
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(180, height - 50, "XYZ WOOD & FURNITURE LTD")
+        p.setFont("Helvetica", 12)
+        p.drawString(50, height - 80, "Sales Report")
+
+        # Data
+        sales = Sale.objects.all().order_by('-created_at')
+        total_sales = sales.aggregate(total=Sum('total_amount'))['total'] or 0
+
+        # Table headers
+        y = height - 120
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(50, y, "Date")
+        p.drawString(150, y, "Customer")
+        p.drawString(350, y, "Payment Type")
+        p.drawString(480, y, "Total (UGX)")
+        y -= 20
+        p.line(50, y, 550, y)
+        y -= 15
+        p.setFont("Helvetica", 10)
+
+        # Table rows
+        for sale in sales:
+            if y < 80:
+                p.showPage()
+                y = height - 80
+                p.setFont("Helvetica-Bold", 11)
+                p.drawString(50, y, "Date")
+                p.drawString(150, y, "Customer")
+                p.drawString(350, y, "Payment Type")
+                p.drawString(480, y, "Total (UGX)")
+                y -= 20
+                p.line(50, y, 550, y)
+                y -= 15
+                p.setFont("Helvetica", 10)
+
+            # Draw sale row
+            p.drawString(50, y, sale.created_at.strftime('%d-%m-%Y'))
+            p.drawString(150, y, sale.customer_name[:18])
+            p.drawString(350, y, sale.payment_type)
+            p.drawRightString(550, y, f"{sale.total_amount:,.0f}")
+            y -= 18
+
+        # Footer summary
+        y -= 15
+        p.line(50, y, 550, y)
+        p.setFont("Helvetica-Bold", 11)
+        y -= 20
+        p.drawString(400, y, "Total Sales:")
+        p.drawRightString(550, y, f"{total_sales:,.0f} UGX")
+
+        # Footer note
+        y -= 40
+        p.setFont("Helvetica-Oblique", 9)
+        p.drawString(50, y, "Goods once sold are not returnable.")
+        p.drawString(50, y - 15, "For inquiries or complaints, contact +256 700 000000 or info@xyzfurniture.com")
+
+        # Finalize
+        p.showPage()
+        p.save()
+
+        return response
 
 
 
-
-
-
+ #<!-- <a href="{% url 'download_sales_report_pdf' %}" class="btn btn-danger">
+ #     <i class="bi bi-file-earmark-pdf"></i> Download PDF
+ #   </a>-->
 
 
 
