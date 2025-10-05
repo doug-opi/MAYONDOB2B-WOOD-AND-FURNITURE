@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'sales.apps.SalesConfig',
     'crispy_forms',
     'crispy_bootstrap5',
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [
