@@ -18,4 +18,5 @@ urlpatterns = [
     path("item/<int:pk>/delete/", views.SaleItemDeleteView.as_view(), name="item_delete"),
     path('sales-report/', views.SalesReportView.as_view(), name='sales_report'),
     path('download-sales-report/', views.DownloadSalesReportPDFView.as_view(), name='download_sales_report_pdf'),
+    path("analytics/", views.SalesAnalyticsView.as_view(), name="sales_analytics"),
 ]

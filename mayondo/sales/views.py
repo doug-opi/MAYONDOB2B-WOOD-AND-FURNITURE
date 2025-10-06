@@ -252,87 +252,110 @@ class DownloadSalesReportPDFView(View):
 
 
 
+#SALES ANALYTICS
+from django.views.generic import TemplateView
+from django.db.models import Sum, F, DecimalField, ExpressionWrapper
+from django.utils import timezone
+from datetime import timedelta
+from .models import Sale, SaleItem
+
+class SalesAnalyticsView(TemplateView):
+    template_name = "sales_analytics.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # --- Annotate each sale with its total amount ---
+        sales = Sale.objects.annotate(
+            total_amount=Sum(
+                ExpressionWrapper(
+                    F("items__quantity") * F("items__unit_price"),
+                    output_field=DecimalField()
+                )
+            )
+        )
+
+        # --- Total sales (computed directly from SaleItem, not nested aggregate) ---
+        total_sales = (
+            SaleItem.objects.aggregate(
+                total=Sum(
+                    ExpressionWrapper(
+                        F("quantity") * F("unit_price"),
+                        output_field=DecimalField()
+                    )
+                )
+            )["total"]
+            or 0
+        )
+
+        sale_count = sales.count()
+        average_sale = total_sales / sale_count if sale_count else 0
+
+        # --- Top 5 customers ---
+        top_customers = (
+            sales.values("customer_name")
+            .annotate(total=Sum(
+                ExpressionWrapper(
+                    F("items__quantity") * F("items__unit_price"),
+                    output_field=DecimalField()
+                )
+            ))
+            .order_by("-total")[:5]
+        )
+
+        # --- Top 5 products ---
+        top_products = (
+            SaleItem.objects.values("product__name")
+            .annotate(
+                total=Sum(
+                    ExpressionWrapper(F("quantity") * F("unit_price"), output_field=DecimalField())
+                )
+            )
+            .order_by("-total")[:5]
+        )
+
+        # --- Payment breakdown ---
+        payment_breakdown = (
+            sales.values("payment_type")
+            .annotate(
+                total=Sum(
+                    ExpressionWrapper(
+                        F("items__quantity") * F("items__unit_price"),
+                        output_field=DecimalField()
+                    )
+                )
+            )
+            .order_by("-total")
+        )
+
+        # --- Sales trend (last 30 days) ---
+        today = timezone.now().date()
+        last_30 = today - timedelta(days=30)
+        trend_data = (
+            SaleItem.objects.filter(sale__created_at__date__gte=last_30)
+            .values("sale__created_at__date")
+            .annotate(
+                total=Sum(
+                    ExpressionWrapper(F("quantity") * F("unit_price"), output_field=DecimalField())
+                )
+            )
+            .order_by("sale__created_at__date")
+        )
+
+        # --- Add to context ---
+        context.update({
+            "total_sales": total_sales,
+            "sale_count": sale_count,
+            "average_sale": average_sale,
+            "top_customers": top_customers,
+            "top_products": top_products,
+            "payment_breakdown": payment_breakdown,
+            "trend_data": trend_data,
+        })
+
+        return context
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#def add_item(request, pk):
- #   sale = get_object_or_404(Sale, pk=pk)
-  #  if request.method == "POST":
-   #     form = SaleItemForm(request.POST)
-    #    if form.is_valid():
-     #       item = form.save(commit=False)
-      #      item.sale = sale
-       #     item.save()
-        #    return redirect("sales:sale_detail", pk=sale.pk)
-   # else:
-    #    form = SaleItemForm()
-    #return render(request, "sales/saleitem_form.html", {"form": form})
 class SaleItemCreateView(CreateView):
     model = SaleItem
     form_class = SaleItemForm
