@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Login</title>
+</head>
+<body>
+  <h2>Login</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Login</button>
+  </form>
+
+  <p>
+    {% if request.GET.next %}
+      You need to log in to access that page.
+    {% endif %}
+  </p>
+
+  <p>Forgot your password? <a href="{% url 'accounts:password_reset' %}">Reset it here</a>.</p>
+
+  <p>
+    Don’t have an account? 
+    Contact your 
+    {% if form.username.value and form.username.value|lower == 'manager' %}
+      administrator
+    {% else %}
+      manager
+    {% endif %}
+    for access.
+  </p>
+</body>
+</html>
