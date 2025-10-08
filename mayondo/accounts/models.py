@@ -1,20 +1,24 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-# Create your models here.
-from django.db import models
-from django.contrib.auth.models import User
-
-class Profile(models.Model):
+class CustomUser(AbstractUser):
     ROLE_CHOICES = [
+        ('superadmin', 'Super Admin'),
         ('manager', 'Manager'),
         ('attendant', 'Attendant'),
     ]
-    
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
-    created_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_users'
-    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='attendant')
+    email = models.EmailField(unique=True)
 
     def __str__(self):
-        return f"{self.user.username} ({self.role})"
+        return f"{self.username} ({self.role})"
+
+    # Role check helpers
+    def is_manager(self):
+        return self.role == 'manager'
+
+    def is_attendant(self):
+        return self.role == 'attendant'
+
+    def is_superadmin(self):
+        return self.role == 'superadmin'
