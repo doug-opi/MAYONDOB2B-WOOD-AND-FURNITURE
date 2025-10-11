@@ -10,20 +10,45 @@ from django.views import View
 from django.db import transaction
 from .models import Sale, SaleItem
 from .forms import SaleForm, SaleItemForm, SaleItemFormSet
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth import get_user_model 
+User = get_user_model()  
+#class ManagerRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+#    def test_func(self):
+#        return self.request.user.is_authenticated and self.request.user.is_manager()
 
-class SaleListView(ListView):
+#class AttendantRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+#    def test_func(self):
+#        return self.request.user.is_authenticated and self.request.user.is_attendant()
+class ManagerRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_authenticated and getattr(self.request.user, 'is_manager', lambda: False)()
+
+class AttendantRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_authenticated and getattr(self.request.user, 'is_attendant', lambda: False)()
+
+class ManagerOrAttendantRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        user = self.request.user
+        return (
+            user.is_authenticated and
+            (user.is_manager() or user.is_attendant())
+        )
+
+class SaleListView(ManagerOrAttendantRequiredMixin,ListView):
     model = Sale
     template_name = "sale_list.html"
     context_object_name = "sales"
 
 
-class SaleDetailView(DetailView):
+class SaleDetailView(AttendantRequiredMixin, DetailView):
     model = Sale
     template_name = "sale_detail.html"
     context_object_name = "sale"
 
 
-class SaleCreateView(CreateView):
+class SaleCreateView(AttendantRequiredMixin, CreateView):
     model = Sale
     form_class = SaleForm
     template_name = "sale_form.html"
@@ -43,7 +68,7 @@ class SaleCreateView(CreateView):
         return super().form_valid(form)
 
 
-class SaleItemCreateView(CreateView):
+class SaleItemCreateView(AttendantRequiredMixin, CreateView):
     model = SaleItem
     form_class = SaleItemForm
     template_name = "saleitem_form.html"
@@ -56,7 +81,7 @@ class SaleItemCreateView(CreateView):
     def get_success_url(self):
         return reverse_lazy("sales:sale_detail", kwargs={"pk": self.kwargs['pk']})
     
-class SaleUpdateView(UpdateView):
+class SaleUpdateView(AttendantRequiredMixin, UpdateView):
     model = Sale
     form_class = SaleForm
     template_name = "sale_form.html"
@@ -65,7 +90,7 @@ class SaleUpdateView(UpdateView):
         return reverse("sales:sale_detail", kwargs={"pk": self.object.pk})
 
 
-class SaleDeleteView(DeleteView):
+class SaleDeleteView(AttendantRequiredMixin, DeleteView):
     model = Sale
     template_name = "sale_confirm_delete.html"
     success_url = reverse_lazy("sales:sale_list")
@@ -74,7 +99,7 @@ class SaleDeleteView(DeleteView):
 
 from .utils import generate_invoice_pdf
 
-class SaleInvoicePDFView(View):
+class SaleInvoicePDFView(AttendantRequiredMixin, View):
     def get(self, request, pk):
         sale = get_object_or_404(Sale, pk=pk)
         return generate_invoice_pdf(sale.id)
@@ -94,39 +119,7 @@ from django.db.models import (
     Sum, F, DecimalField, ExpressionWrapper, OuterRef, Subquery
 )
 
-#class SalesReportView(ListView):
-#    model = Sale
-#    template_name = 'sales_report.html'
-#    context_object_name = 'sales'
-
-#    def get_queryset(self):
-#        # Default: last 30 days
-#        start_date = self.request.GET.get('start_date')
-#        end_date = self.request.GET.get('end_date')
-
-#        if start_date and end_date:
-#            queryset = Sale.objects.filter(created_at__range=[start_date, end_date])
-#        else:
-#            today = timezone.now().date()
-#            queryset = Sale.objects.filter(created_at__gte=today - timedelta(days=30))
-
-#        return queryset.order_by('-created_at')
-
-#    def get_context_data(self, **kwargs):
-#        context = super().get_context_data(**kwargs)
-#        sales = context['sales']
-
-        # Aggregations
-#        context['total_sales'] = sales.aggregate(total=Sum('total_amount'))['total'] or 0
-#        context['sale_count'] = sales.count()
-#        context['sales_by_payment'] = (
-#            sales.values('payment_type')
-#            .annotate(total=Sum('total_amount'))
-#            .order_by('-total')
-#        )
-#        return context
-
-class SalesReportView(ListView):
+class SalesReportView(ManagerOrAttendantRequiredMixin, ListView):
     model = Sale
     template_name = 'sales_report.html'
     context_object_name = 'sales'
@@ -170,7 +163,7 @@ class SalesReportView(ListView):
 
 
 
-class DownloadSalesReportPDFView(View):
+class DownloadSalesReportPDFView(ManagerRequiredMixin,View):
     def get(self, request, *args, **kwargs):
         # Create HTTP response with PDF headers
         response = HttpResponse(content_type="application/pdf")
@@ -182,7 +175,7 @@ class DownloadSalesReportPDFView(View):
 
         # Header
         p.setFont("Helvetica-Bold", 16)
-        p.drawString(180, height - 50, "XYZ WOOD & FURNITURE LTD")
+        p.drawString(180, height - 50, "MAYONDO WOOD & FURNITURE LTD")
         p.setFont("Helvetica", 12)
         p.drawString(50, height - 80, "Sales Report")
 
@@ -236,7 +229,7 @@ class DownloadSalesReportPDFView(View):
         y -= 40
         p.setFont("Helvetica-Oblique", 9)
         p.drawString(50, y, "Goods once sold are not returnable.")
-        p.drawString(50, y - 15, "For inquiries or complaints, contact +256 700 000000 or info@xyzfurniture.com")
+        p.drawString(50, y - 15, "For inquiries or complaints, contact +256 700 000000 or info@mwffurniture.com")
 
         # Finalize
         p.showPage()
@@ -259,7 +252,7 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import Sale, SaleItem
 
-class SalesAnalyticsView(TemplateView):
+class SalesAnalyticsView(ManagerRequiredMixin,TemplateView):
     template_name = "sales_analytics.html"
 
     def get_context_data(self, **kwargs):
@@ -356,7 +349,7 @@ class SalesAnalyticsView(TemplateView):
         return context
 
 
-class SaleItemCreateView(CreateView):
+class SaleItemCreateView(AttendantRequiredMixin, CreateView):
     model = SaleItem
     form_class = SaleItemForm
     template_name = "saleitem_form.html"
@@ -376,7 +369,7 @@ class SaleItemCreateView(CreateView):
 
 
 
-class SaleItemUpdateView(UpdateView):
+class SaleItemUpdateView(AttendantRequiredMixin, UpdateView):
     model = SaleItem
     form_class = SaleItemForm
     template_name = "saleitem_form.html"
@@ -385,14 +378,14 @@ class SaleItemUpdateView(UpdateView):
         return reverse("sales:sale_detail", kwargs={"pk": self.object.sale.pk})
 
 
-class SaleItemDeleteView(DeleteView):
+class SaleItemDeleteView(AttendantRequiredMixin,DeleteView):
     model = SaleItem
     template_name = "saleitem_confirm_delete.html"
 
     def get_success_url(self):
         return reverse("sales:sale_detail", kwargs={"pk": self.object.sale.pk})
 
-class SaleCreateWithItemsView(View):
+class SaleCreateWithItemsView(AttendantRequiredMixin, View):
     def get(self, request):
         form = SaleForm()
         formset = SaleItemFormSet()

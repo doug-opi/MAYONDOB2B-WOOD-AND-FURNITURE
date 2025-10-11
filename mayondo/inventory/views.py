@@ -6,18 +6,36 @@ from .forms import ProductForm, StockForm
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+
+class ManagerRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.is_manager()
+
+class AttendantRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.is_attendant()
+
+class ManagerOrAttendantRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        user = self.request.user
+        return (
+            user.is_authenticated and
+            (user.is_manager() or user.is_attendant())
+        )
+
 
 
 
 # -------------------- Product Views --------------------
 
-class ProductListView(ListView):
+class ProductListView(ManagerRequiredMixin, ListView):
     model = Product
     template_name = "product_list.html"
     context_object_name = "products"
 
 
-class ProductCreateView(SuccessMessageMixin, CreateView):
+class ProductCreateView(ManagerRequiredMixin,SuccessMessageMixin, CreateView):
     model = Product
     form_class = ProductForm
     template_name = "product_form.html"
@@ -25,7 +43,7 @@ class ProductCreateView(SuccessMessageMixin, CreateView):
     success_message = "Product was created successfully!"
 
 
-class ProductUpdateView(SuccessMessageMixin, UpdateView):
+class ProductUpdateView(ManagerRequiredMixin, SuccessMessageMixin, UpdateView):
     model = Product
     form_class = ProductForm
     template_name = "product_form.html"
@@ -33,7 +51,7 @@ class ProductUpdateView(SuccessMessageMixin, UpdateView):
     success_message = "Product was updated successfully!"
 
 
-class ProductDeleteView(DeleteView):
+class ProductDeleteView(ManagerRequiredMixin, DeleteView):
     model = Product
     template_name = "product_confirm_delete.html"
     success_url = reverse_lazy("product_list")
@@ -45,13 +63,13 @@ class ProductDeleteView(DeleteView):
 
 # -------------------- Stock Views --------------------
 
-class StockListView(ListView):
+class StockListView(ManagerOrAttendantRequiredMixin,ListView):
     model = Stock
     template_name = "stock_list.html"
     context_object_name = "stocks"
 
 
-class StockCreateView(SuccessMessageMixin, CreateView):
+class StockCreateView(ManagerRequiredMixin, SuccessMessageMixin, CreateView):
     model = Stock
     form_class = StockForm
     template_name = "stock_form.html"
@@ -59,7 +77,7 @@ class StockCreateView(SuccessMessageMixin, CreateView):
     success_message = "Stock was Added successfully!"
 
 
-class StockUpdateView(SuccessMessageMixin, UpdateView):
+class StockUpdateView(ManagerRequiredMixin,SuccessMessageMixin, UpdateView):
     model = Stock
     form_class = StockForm
     template_name = "stock_form.html"
@@ -67,7 +85,7 @@ class StockUpdateView(SuccessMessageMixin, UpdateView):
     success_message = "Stock was updated successfully!"
 
 
-class StockDeleteView(DeleteView):
+class StockDeleteView(ManagerRequiredMixin, DeleteView):
     model = Stock
     template_name = "stock_confirm_delete.html"
     success_url = reverse_lazy("stock_list")
@@ -81,7 +99,7 @@ class StockDeleteView(DeleteView):
 
 from django.db.models import Sum, F, ExpressionWrapper, DecimalField, OuterRef, Subquery
 
-class StockLevelReportView(ListView):
+class StockLevelReportView(ManagerRequiredMixin, ListView):
     model = Product
     template_name = 'stock_level_report.html'
     context_object_name = 'products'
@@ -128,7 +146,7 @@ from django.db.models import Sum, F, DecimalField, ExpressionWrapper, OuterRef, 
 from .models import Product, Stock
 
 
-class StockReportPDFView(View):
+class StockReportPDFView(ManagerRequiredMixin,View):
     def get(self, request, *args, **kwargs):
         # === Create HTTP response ===
         response = HttpResponse(content_type="application/pdf")
@@ -139,7 +157,7 @@ class StockReportPDFView(View):
 
         # === Title and header ===
         p.setFont("Helvetica-Bold", 16)
-        p.drawString(180, height - 50, "XYZ WOOD & FURNITURE LTD")
+        p.drawString(180, height - 50, "MAYONDO WOOD & FURNITURE LTD")
         p.setFont("Helvetica", 12)
         p.drawString(50, height - 80, "Stock Level Report")
         p.drawString(50, height - 100, "Generated Report of Current Stock Levels")
@@ -213,36 +231,9 @@ class StockReportPDFView(View):
         y -= 40
         p.setFont("Helvetica-Oblique", 9)
         p.drawString(50, y, "Note: Goods once sold are not returnable.")
-        p.drawString(50, y - 15, "For inquiries or complaints, contact us at +256 700 000000 or info@xyzfurniture.com")
+        p.drawString(50, y - 15, "For inquiries or complaints, contact us at +256 700 000000 or info@mwf.com")
 
         # === Save PDF ===
         p.showPage()
         p.save()
         return response
-
-#class StockLevelReportView(ListView):
-#    model = Product
-#    template_name = 'stock_level_report.html'
-#    context_object_name = 'products'
-#    paginate_by = 20  # Optional
-
-#    def get_queryset(self):
-#        queryset = Product.objects.all().annotate(
-#            stock_value=ExpressionWrapper(
-#                F('quantity') * F('unit_price'),
-#                output_field=DecimalField()
-#            )
-#        ).order_by('name')
-#        return queryset#
-
-#    def get_context_data(self, **kwargs):
-#        context = super().get_context_data(**kwargs)
-#        products = context['products']
-
-#        context['total_stock_value'] = sum([p.stock_value for p in products])
-#        context['low_stock_count'] = sum(1 for p in products if 1 <= p.quantity <= 5)
-#        context['out_of_stock_count'] = sum(1 for p in products if p.quantity == 0)
-#        context['available_count'] = sum(1 for p in products if p.quantity > 5)
-#        return context
-
-

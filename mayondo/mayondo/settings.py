@@ -142,3 +142,5 @@ LOGIN_URL = 'accounts:login'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'accounts:login'
 
+# settings.py
+X_FRAME_OPTIONS = 'SAMEORIGIN'

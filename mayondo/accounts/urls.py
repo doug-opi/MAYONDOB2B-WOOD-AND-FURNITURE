@@ -78,3 +78,4 @@ urlpatterns = [
 ]
 
 #<!--<p>Forgot your password? <a href="{% url 'accounts:password_reset' %}">Reset it here</a>.</p>-->
+# <a href="{% url 'receipt_list' %}" target="attendant_iframe">🧾 View All Receipts</a>

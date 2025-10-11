@@ -1,3 +1,160 @@
-<h2>Attendant Dashboard</h2>
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Attendant Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f8fafc;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: #1e293b;
+            color: #f8fafc;
+            padding: 20px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h4 {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .sidebar a {
+            display: block;
+            color: #cbd5e1;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: #334155;
+            color: #fff;
+        }
+
+        hr {
+            border-color: #475569;
+        }
+
+        /* Content area */
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+
+        iframe {
+            width: 100%;
+            height: calc(100vh - 40px);
+            border: none;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h4>Attendant Panel</h4>
+
+        <!-- Links that load into iframe -->
+        <a href="{% url 'sales:sale_list' %}" target="attendant_iframe">📋 View My Sales</a>
+        <a href="{% url 'sales:sale_create' %}" target="attendant_iframe">➕ Record New Sale</a>
+        <a href="{% url 'stock_list' %}" target="attendant_iframe">📦 View Stock</a>
+    
+
+        <hr>
+
+        <a href="{% url 'accounts:logout' %}" class="text-danger">🚪 Logout</a>
+    </div>
+
+    <div class="content">
+        <!-- Default iframe view -->
+        <iframe name="attendant_iframe" src="{% url 'sales:sale_list' %}"></iframe>
+    </div>
+
+    <script>
+        // Highlight active link in sidebar
+        const links = document.querySelectorAll('.sidebar a[target]');
+        links.forEach(link => {
+            link.addEventListener('click', function() {
+                links.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+
+<!--<h2>Attendant Dashboard</h2>
 <p>Welcome, {{ user.username }}!</p>
-<a href="{% url 'accounts:logout' %}">Logout</a>
+<a href="{% url 'accounts:logout' %}">Logout</a>-->
+<!--{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attendant Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+        }
+        .sidebar {
+            width: 240px;
+            background-color: #1e293b;
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar a {
+            color: #e2e8f0;
+            text-decoration: none;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        .sidebar a:hover {
+            color: #0dcaf0;
+        }
+        .content {
+            flex-grow: 1;
+            padding: 40px;
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h4 class="mb-4">Attendant Panel</h4>
+        <a href="{% url 'sales:sale_list' %}">📋 View My Sales</a>
+        <a href="{% url 'sales:sale_create' %}">➕ Record New Sale</a>
+        <a href="{% url 'stock_list' %}">📦 View Stock</a>
+        <hr style="border-color: #475569;">
+        <a href="{% url 'accounts:logout' %}">🚪 Logout</a>
+    </div>
+
+    <div class="content">
+        <h3>Welcome, {{ user.username }}!</h3>
+        <p>You can record new sales, view stock levels, and review your transactions.</p>
+    </div>
+</body>
+</html>-->
+
