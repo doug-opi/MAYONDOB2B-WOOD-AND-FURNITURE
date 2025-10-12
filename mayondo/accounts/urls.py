@@ -11,7 +11,7 @@
 #    path('manager/create-attendant/', views.CreateAttendantView.as_view(), name='create_attendant'),
 
     # Password reset
-#    path('password-reset/', views.CustomPasswordResetView.as_view(), name='password_reset'),
+#path('password-reset/', views.CustomPasswordResetView.as_view(), name='password_reset'),
 #    path('password-reset/done/', views.CustomPasswordResetDoneView.as_view(), name='password_reset_done'),
 #    path('reset/<uidb64>/<token>/', views.CustomPasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 #    path('reset/done/', views.CustomPasswordResetCompleteView.as_view(), name='password_reset_complete'),
@@ -75,7 +75,17 @@ urlpatterns = [
 
     # Manager creates attendants
     path('manager/create-attendant/', views.CreateAttendantView.as_view(), name='create_attendant'),
+    path('password-reset/', views.CustomPasswordResetView.as_view(), name='password_reset'),
 ]
 
 #<!--<p>Forgot your password? <a href="{% url 'accounts:password_reset' %}">Reset it here</a>.</p>-->
 # <a href="{% url 'receipt_list' %}" target="attendant_iframe">🧾 View All Receipts</a>
+
+#CREATE_ATTENDANT.HTML
+#<h2>Create Attendant</h2>
+#<form method="post">
+#  {% csrf_token %}
+#  {{ form.as_p }}
+#  <button type="submit">Create Attendant</button>
+#</form>
+#<a href="{% url 'accounts:manager_dashboard' %}">Back</a>

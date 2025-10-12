@@ -10,7 +10,7 @@ from django.urls import reverse_lazy
 from django.contrib.auth import login
 from .forms import CustomUserCreationForm  # ✅ updated form import
 from .models import CustomUser
-
+from .forms import CustomUserCreationForm, CustomUserChangeForm
 
 # ---------------------------
 # LOGIN / LOGOUT
@@ -18,7 +18,6 @@ from .models import CustomUser
 
 class CustomLoginView(LoginView):
     template_name = 'login.html'
-
     def get_success_url(self):
         user = self.request.user
         if user.is_superadmin():
@@ -28,7 +27,6 @@ class CustomLoginView(LoginView):
         elif user.is_attendant():
             return reverse_lazy('accounts:attendant_dashboard')
         return reverse_lazy('accounts:login')
-
 
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy('accounts:login')

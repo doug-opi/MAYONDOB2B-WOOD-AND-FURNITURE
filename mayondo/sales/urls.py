@@ -20,3 +20,31 @@ urlpatterns = [
     path('download-sales-report/', views.DownloadSalesReportPDFView.as_view(), name='download_sales_report_pdf'),
     path("analytics/", views.SalesAnalyticsView.as_view(), name="sales_analytics"),
 ]
+#SALE FORM.HTML
+#{% extends "base.html" %}
+#{% load crispy_forms_tags %}
+#{% block content %}
+#<div class="container mt-4">
+#    <h2>New Sale</h2>
+#    <form method="post" class="card p-4 shadow-sm" novalidate>
+#        {% csrf_token %}
+#        {{ form.non_field_errors }}
+#        <div class="mb-3">
+#            {{ form.customer_name.label_tag }}
+#            {{ form.customer_name }}
+#            {{ form.customer_name.errors }}
+#        </div>
+#        <div class="mb-3">
+#            {{ form.payment_type.label_tag }}
+#            {{ form.payment_type }}
+#            {{ form.payment_type.errors }}
+#        </div>
+#        <div class="form-check mb-3">
+#            {{ form.transport_required }}
+#            {{ form.transport_required.label_tag }}
+#            {{ form.transport_required.errors }}
+#        </div>
+#        <button type="submit" class="btn btn-primary">Save Sale</button>
+#    </form>
+#</div>
+#{% endblock %}

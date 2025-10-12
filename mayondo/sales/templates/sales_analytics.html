@@ -2,119 +2,302 @@
 {% load humanize %}
 
 {% block content %}
-<div class="container mt-4">
-  <h3 class="mb-4 text-center">📊 Sales Analytics Dashboard</h3>
+<style>
+  .analytics-wrapper {
+    max-width: 1200px;
+    margin: 28px auto;
+    padding: 20px;
+  }
+
+  .dashboard-header {
+    text-align: center;
+    margin-bottom: 22px;
+  }
+  .dashboard-header h3 {
+    margin: 0;
+    font-weight: 700;
+    color: #1e3a8a;
+  }
+
+  /* Metric cards */
+  .metric-card {
+    border-radius: 10px;
+    padding: 18px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(15,23,42,0.03);
+    min-height: 100px;
+  }
+  .metric-card h6 {
+    margin: 0 0 8px 0;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.95rem;
+  }
+  .metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0b5ed7;
+  }
+  .metric-subtle {
+    color: #6b7280;
+    font-size: 0.9rem;
+  }
+
+  /* Cards for tables/charts */
+  .panel-card {
+    border-radius: 10px;
+    padding: 14px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(15,23,42,0.03);
+  }
+  .panel-card h6 {
+    margin: 0 0 12px 0;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #111827;
+  }
+
+  /* Small tables inside panels */
+  .panel-card table {
+    margin-bottom: 0;
+  }
+  .table-sm th, .table-sm td {
+    padding: .5rem .6rem;
+  }
+
+  /* Charts: ensure responsive canvas container */
+  .chart-wrap {
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Empty state message */
+  .empty-state {
+    color: #6b7280;
+    padding: 28px;
+    text-align: center;
+  }
+
+  @media (max-width: 767px) {
+    .metric-value { font-size: 1.35rem; }
+    .chart-wrap { min-height: 220px; }
+  }
+</style>
+
+<div class="analytics-wrapper">
+  <div class="dashboard-header">
+    <h3>📊 Sales Analytics Dashboard</h3>
+  </div>
 
   <!-- METRICS CARDS -->
-  <div class="row text-center mb-4">
-    <div class="col-md-4 mb-3">
-      <div class="card shadow-sm p-3">
+  <div class="row mb-4 gx-3">
+    <div class="col-md-4 col-12 mb-3">
+      <div class="metric-card text-center">
         <h6>Total Sales</h6>
-        <h3 class="text-success">{{ total_sales|floatformat:0|intcomma }} UGX</h3>
+        <div class="metric-value">{{ total_sales|floatformat:0|intcomma }} UGX</div>
+        <div class="metric-subtle">Total revenue for the selected period</div>
       </div>
     </div>
-    <div class="col-md-4 mb-3">
-      <div class="card shadow-sm p-3">
+
+    <div class="col-md-4 col-12 mb-3">
+      <div class="metric-card text-center">
         <h6>Number of Sales</h6>
-        <h3>{{ num_sales }}</h3>
+        <div class="metric-value">{{ num_sales|default:"0" }}</div>
+        <div class="metric-subtle">Number of completed transactions</div>
       </div>
     </div>
-    <div class="col-md-4 mb-3">
-      <div class="card shadow-sm p-3">
+
+    <div class="col-md-4 col-12 mb-3">
+      <div class="metric-card text-center">
         <h6>Average Sale Value</h6>
-        <h3>{{ avg_sale_value|floatformat:0|intcomma }} UGX</h3>
+        <div class="metric-value">{{ avg_sale_value|floatformat:0|intcomma }} UGX</div>
+        <div class="metric-subtle">Avg. order value</div>
       </div>
     </div>
   </div>
 
   <!-- TOP CUSTOMERS & PRODUCTS -->
-  <div class="row mb-5">
-    <div class="col-md-6">
-      <div class="card p-3 shadow-sm">
+  <div class="row mb-4 gx-3">
+    <div class="col-md-6 col-12 mb-3">
+      <div class="panel-card">
         <h6>Top 5 Customers by Revenue</h6>
-        <table class="table table-sm">
-          <thead>
-            <tr><th>Customer</th><th class="text-end">Total (UGX)</th></tr>
-          </thead>
-          <tbody>
-            {% for c in top_customers %}
+        {% if top_customers %}
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th class="text-end">Total (UGX)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in top_customers %}
               <tr>
                 <td>{{ c.customer_name }}</td>
                 <td class="text-end">{{ c.total_spent|floatformat:0|intcomma }}</td>
               </tr>
-            {% empty %}
-              <tr><td colspan="2">No sales yet.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">No sales yet.</div>
+        {% endif %}
       </div>
     </div>
 
-    <div class="col-md-6">
-      <div class="card p-3 shadow-sm">
+    <div class="col-md-6 col-12 mb-3">
+      <div class="panel-card">
         <h6>Top 5 Products Sold</h6>
-        <table class="table table-sm">
-          <thead>
-            <tr><th>Product</th><th class="text-end">Quantity</th></tr>
-          </thead>
-          <tbody>
-            {% for p in top_products %}
+        {% if top_products %}
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th class="text-end">Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in top_products %}
               <tr>
                 <td>{{ p.product__name }}</td>
                 <td class="text-end">{{ p.total_sold }}</td>
               </tr>
-            {% empty %}
-              <tr><td colspan="2">No product data.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">No product data.</div>
+        {% endif %}
       </div>
     </div>
   </div>
 
   <!-- CHARTS SECTION -->
-  <div class="row mb-5">
-    <div class="col-md-6">
-      <div class="card p-3 shadow-sm">
+  <div class="row gx-3">
+    <div class="col-md-6 col-12 mb-3">
+      <div class="panel-card">
         <h6>Sales Trend (Last 30 Days)</h6>
-        <canvas id="salesTrend"></canvas>
+
+        {% if trend_data %}
+        <div class="chart-wrap">
+          <canvas id="salesTrend" aria-label="Sales trend chart" role="img"></canvas>
+        </div>
+        {% else %}
+        <div class="empty-state">No sales trend data available.</div>
+        {% endif %}
       </div>
     </div>
-    <div class="col-md-6">
-      <div class="card p-3 shadow-sm">
+
+    <div class="col-md-6 col-12 mb-3">
+      <div class="panel-card">
         <h6>Payment Type Breakdown</h6>
-        <canvas id="paymentTypeChart"></canvas>
+
+        {% if payment_breakdown %}
+        <div class="chart-wrap">
+          <canvas id="paymentTypeChart" aria-label="Payment type breakdown" role="img"></canvas>
+        </div>
+        {% else %}
+        <div class="empty-state">No payment data available.</div>
+        {% endif %}
       </div>
     </div>
   </div>
-
 </div>
 
-<!-- Chart.js -->
+<!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const trendCtx = document.getElementById('salesTrend');
-const trendData = {
-  labels: [{% for d in trend_data %}"{{ d.day }}",{% endfor %}],
-  datasets: [{
-    label: 'Sales (UGX)',
-    data: [{% for d in trend_data %}{{ d.total }},{% endfor %}],
-    borderColor: 'rgba(54, 162, 235, 1)',
-    fill: false,
-    tension: 0.2
-  }]
-};
-new Chart(trendCtx, { type: 'line', data: trendData });
+  // Helper to build JS arrays without trailing commas
+  function jsArrayFromDjangoStrings(list) {
+    return list;
+  }
 
-const paymentCtx = document.getElementById('paymentTypeChart');
-const paymentData = {
-  labels: [{% for p in payment_breakdown %}"{{ p.payment_type }}",{% endfor %}],
-  datasets: [{
-    data: [{% for p in payment_breakdown %}{{ p.total }},{% endfor %}],
-    backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56', '#4BC0C0'],
-  }]
-};
-new Chart(paymentCtx, { type: 'pie', data: paymentData });
+  {% if trend_data %}
+  // Build labels and values for the line chart (no trailing commas)
+  const trendLabels = [
+    {% for d in trend_data %}
+      {% if not forloop.first %}, {% endif %}"{{ d.day }}"
+    {% endfor %}
+  ];
+  const trendValues = [
+    {% for d in trend_data %}
+      {% if not forloop.first %}, {% endif %}{{ d.total|default:0 }}
+    {% endfor %}
+  ];
+
+  const trendCtx = document.getElementById('salesTrend').getContext('2d');
+  new Chart(trendCtx, {
+    type: 'line',
+    data: {
+      labels: trendLabels,
+      datasets: [{
+        label: 'Sales (UGX)',
+        data: trendValues,
+        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: 'rgba(54, 162, 235, 0.08)',
+        fill: true,
+        tension: 0.25,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: { ticks: { maxRotation: 0, autoSkip: true } },
+        y: { beginAtZero: true }
+      }
+    }
+  });
+  {% endif %}
+
+  {% if payment_breakdown %}
+  const paymentLabels = [
+    {% for p in payment_breakdown %}
+      {% if not forloop.first %}, {% endif %}"{{ p.payment_type }}"
+    {% endfor %}
+  ];
+  const paymentValues = [
+    {% for p in payment_breakdown %}
+      {% if not forloop.first %}, {% endif %}{{ p.total|default:0 }}
+    {% endfor %}
+  ];
+
+  const paymentCtx = document.getElementById('paymentTypeChart').getContext('2d');
+  new Chart(paymentCtx, {
+    type: 'pie',
+    data: {
+      labels: paymentLabels,
+      datasets: [{
+        data: paymentValues,
+        backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56', '#4BC0C0', '#8A2BE2'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    }
+  });
+  {% endif %}
 </script>
 
 {% endblock %}
